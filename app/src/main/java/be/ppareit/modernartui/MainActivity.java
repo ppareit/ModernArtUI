@@ -10,6 +10,7 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.jar.Manifest;
 
@@ -20,33 +21,68 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout mRootLinearLayout;
     private Random random = new Random();
 
+    private ArrayList<LinearLayout> mLeafLinearLayouts;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         mRootLinearLayout = (LinearLayout) findViewById(R.id.root_linearlayout);
+        mLeafLinearLayouts = new ArrayList<>();
+
         fillLinearLayout(mRootLinearLayout, 4);
+
+        enforceConstraints();
+
+    }
+
+    private void enforceConstraints() {
+        // we need one grey and one colored rectangle
+        // so we take two leafs and color them correctly
+        int greyIndex = random.nextInt(mLeafLinearLayouts.size());
+        int colorIndex = random.nextInt(mLeafLinearLayouts.size());
+        if (greyIndex == colorIndex) { // retry
+            enforceConstraints();
+            return;
+        }
+        // we generate a light grey color
+        int greyCode = nextRandomIntBetween(230, 255);
+        int greyColor = Color.rgb(greyCode, greyCode, greyCode);
+        mLeafLinearLayouts.get(greyIndex).setBackgroundColor(greyColor);
+        // we generate a sharp color
+        int[] colorCodes = new int[]{nextRandomIntBetween(200, 255), nextRandomIntBetween(200, 255), nextRandomIntBetween(200, 255)};
+        colorCodes[random.nextInt(3)] = 0;
+        int colorColor = Color.rgb(colorCodes[0],colorCodes[1],colorCodes[2]);
+        mLeafLinearLayouts.get(colorIndex).setBackgroundColor(colorColor);
     }
 
     private void fillLinearLayout(LinearLayout parent, int depth) {
         if (depth == 0) {
             return;
         }
-        for (int i = 0; i < depth + random.nextInt(2); ++i) {
+        for (int i = 0; i < nextRandomIntBetween(depth, depth + 1); ++i) {
             LinearLayout linLay = new LinearLayout(this);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             lp.weight = 1 + random.nextInt(2);
-            if ( depth == 1) {
+            if (depth == 1) {
                 lp.setMargins(2, 2, 2, 2);
                 int color = Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256));
                 linLay.setBackgroundColor(color);
+                mLeafLinearLayouts.add(linLay);
             }
             linLay.setLayoutParams(lp);
             linLay.setOrientation(depth % 2 == 0 ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
             parent.addView(linLay);
             fillLinearLayout(linLay, depth - 1);
         }
+    }
+
+    /**
+     * @return a random number in [min,max] (inclusive!)
+     */
+    private int nextRandomIntBetween(int min, int max) {
+        return min + random.nextInt(max + 1);
     }
 
 
