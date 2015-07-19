@@ -29,15 +29,27 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mRootLinearLayout = (LinearLayout) findViewById(R.id.root_linearlayout);
+
+        newArt();
+
+    }
+
+    private void newArt() {
         mLeafLinearLayouts = new ArrayList<>();
 
-        fillLinearLayout(mRootLinearLayout, 4);
+        mRootLinearLayout.removeAllViews();
+        fillLinearLayout(mRootLinearLayout, 2);
+        Log.d(TAG, "Leafs: " + mLeafLinearLayouts.size());
 
         enforceConstraints();
 
     }
 
     private void enforceConstraints() {
+        if (mLeafLinearLayouts.size() < 2) {
+            Log.e(TAG, "Unable to guarantee constraints");
+            return;
+        }
         // we need one grey and one colored rectangle
         // so we take two leafs and color them correctly
         int greyIndex = random.nextInt(mLeafLinearLayouts.size());
@@ -47,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         // we generate a light grey color
-        int greyCode = nextRandomIntBetween(230, 255);
+        int greyCode = nextRandomIntBetween(200, 255);
         int greyColor = Color.rgb(greyCode, greyCode, greyCode);
         mLeafLinearLayouts.get(greyIndex).setBackgroundColor(greyColor);
         // we generate a sharp color
@@ -58,23 +70,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void fillLinearLayout(LinearLayout parent, int depth) {
-        if (depth == 0) {
-            return;
-        }
         for (int i = 0; i < nextRandomIntBetween(depth, depth + 1); ++i) {
             LinearLayout linLay = new LinearLayout(this);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            lp.weight = 1 + random.nextInt(2);
+            lp.weight = nextRandomIntBetween(1, 2);
             if (depth == 1) {
                 lp.setMargins(2, 2, 2, 2);
                 int color = Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256));
                 linLay.setBackgroundColor(color);
                 mLeafLinearLayouts.add(linLay);
+                linLay.setLayoutParams(lp);
+                parent.addView(linLay);
+            } else {
+                linLay.setLayoutParams(lp);
+                linLay.setOrientation(depth % 2 == 0 ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+                parent.addView(linLay);
+                fillLinearLayout(linLay, depth - 1);
             }
-            linLay.setLayoutParams(lp);
-            linLay.setOrientation(depth % 2 == 0 ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
-            parent.addView(linLay);
-            fillLinearLayout(linLay, depth - 1);
         }
     }
 
@@ -101,6 +113,9 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
+        if (id == R.id.action_new) {
+            newArt();
+        }
         if (id == R.id.action_settings) {
             return true;
         }
