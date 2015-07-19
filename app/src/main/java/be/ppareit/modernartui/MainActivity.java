@@ -9,19 +9,25 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.jar.Manifest;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private LinearLayout mRootLinearLayout;
+    private SeekBar mColorSeekBar;
+
     private Random random = new Random();
 
     private ArrayList<LinearLayout> mLeafLinearLayouts;
+    private ArrayList<LinearLayout> mColoredLeafLinearLayouts;
+    private int nColor = 0;
+    private int nOrientation = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,43 +36,39 @@ public class MainActivity extends AppCompatActivity {
 
         mRootLinearLayout = (LinearLayout) findViewById(R.id.root_linearlayout);
 
+        mColorSeekBar = (SeekBar) findViewById(R.id.color_seekbar);
+        mColorSeekBar.setOnSeekBarChangeListener(this);
+
         newArt();
 
     }
 
     private void newArt() {
         mLeafLinearLayouts = new ArrayList<>();
+        mColoredLeafLinearLayouts = new ArrayList<>();
 
         mRootLinearLayout.removeAllViews();
-        fillLinearLayout(mRootLinearLayout, 2);
-        Log.d(TAG, "Leafs: " + mLeafLinearLayouts.size());
+        nColor = random.nextInt();
+        nOrientation = random.nextInt();
 
-        enforceConstraints();
+        fillLinearLayout(mRootLinearLayout, 3);
 
     }
 
-    private void enforceConstraints() {
-        if (mLeafLinearLayouts.size() < 2) {
-            Log.e(TAG, "Unable to guarantee constraints");
-            return;
-        }
-        // we need one grey and one colored rectangle
-        // so we take two leafs and color them correctly
-        int greyIndex = random.nextInt(mLeafLinearLayouts.size());
-        int colorIndex = random.nextInt(mLeafLinearLayouts.size());
-        if (greyIndex == colorIndex) { // retry
-            enforceConstraints();
-            return;
-        }
-        // we generate a light grey color
+    private int getGreyColor() {
         int greyCode = nextRandomIntBetween(200, 255);
-        int greyColor = Color.rgb(greyCode, greyCode, greyCode);
-        mLeafLinearLayouts.get(greyIndex).setBackgroundColor(greyColor);
-        // we generate a sharp color
+        return Color.rgb(greyCode, greyCode, greyCode);
+    }
+
+    private int getColorColor() {
         int[] colorCodes = new int[]{nextRandomIntBetween(200, 255), nextRandomIntBetween(200, 255), nextRandomIntBetween(200, 255)};
         colorCodes[random.nextInt(3)] = 0;
-        int colorColor = Color.rgb(colorCodes[0],colorCodes[1],colorCodes[2]);
-        mLeafLinearLayouts.get(colorIndex).setBackgroundColor(colorColor);
+        return Color.argb(255, colorCodes[0], colorCodes[1], colorCodes[2]);
+    }
+
+    private int getNextColor() {
+        nColor++;
+        return (nColor % 2 == 0) ? getGreyColor() : getColorColor();
     }
 
     private void fillLinearLayout(LinearLayout parent, int depth) {
@@ -76,14 +78,18 @@ public class MainActivity extends AppCompatActivity {
             lp.weight = nextRandomIntBetween(1, 2);
             if (depth == 1) {
                 lp.setMargins(2, 2, 2, 2);
-                int color = Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256));
-                linLay.setBackgroundColor(color);
+                if (nColor++ % 2 == 0) {
+                    linLay.setBackgroundColor(getColorColor());
+                    mColoredLeafLinearLayouts.add(linLay);
+                } else {
+                    linLay.setBackgroundColor(getGreyColor());
+                }
                 mLeafLinearLayouts.add(linLay);
                 linLay.setLayoutParams(lp);
                 parent.addView(linLay);
             } else {
                 linLay.setLayoutParams(lp);
-                linLay.setOrientation(depth % 2 == 0 ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+                linLay.setOrientation(nOrientation++ % 2 == 0 ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
                 parent.addView(linLay);
                 fillLinearLayout(linLay, depth - 1);
             }
@@ -116,10 +122,42 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_new) {
             newArt();
         }
-        if (id == R.id.action_settings) {
-            return true;
+        if (id == R.id.action_moreinfo) {
+            new AlertDialog.Builder(this)
+                    .setMessage("Do you want to get the information from the MoMa")
+                    .setCancelable(false)
+                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            return;
+                        }
+                    })
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Log.d(TAG, "Display site");
+                        }
+                    })
+                    .create();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        for (LinearLayout ll : mColoredLeafLinearLayouts) {
+            ll.setAlpha(1.f - progress/100.f);
+        }
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+
     }
 }
