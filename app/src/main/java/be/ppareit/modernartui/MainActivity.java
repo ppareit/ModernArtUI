@@ -1,7 +1,10 @@
 package be.ppareit.modernartui;
 
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
-import android.nfc.Tag;
+import android.net.Uri;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -129,16 +132,20 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            return;
                         }
                     })
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Log.d(TAG, "Display site");
+                            Uri webpage = Uri.parse("http://www.moma.org/collection/artists/4057");
+                            Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+                            if (intent.resolveActivity(getPackageManager()) != null) {
+                                startActivity(intent);
+                            }
                         }
                     })
-                    .create();
+                    .create()
+                    .show();
         }
 
         return super.onOptionsItemSelected(item);
@@ -147,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         for (LinearLayout ll : mColoredLeafLinearLayouts) {
-            ll.setAlpha(1.f - progress/100.f);
+            ll.setAlpha(1.f - progress / 100.f);
         }
     }
 
